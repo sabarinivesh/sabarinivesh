@@ -1,0 +1,130 @@
+#include<pic.h>
+__CONFIG(0X3D72);
+
+#define _XTAL_FREQ  20000000
+
+int i,j;
+
+void delay();
+void uart_initialize();
+void esp8266();
+void tcp();
+void delay_esp();
+void transmit_int(int a);
+unsigned char trans_string(const char *s);
+
+void main()
+{ 
+     TRISB=0X00; 
+     PORTB=0X00;
+     TRISD=0X00;
+     PORTD=0X00;
+	RD3=1;
+	uart_initialize();
+	esp8266();
+       
+	while(1)
+	{      
+		 if(RD3==0)
+		 { 
+			while (RD3==0); 
+		
+			     RB2=RB2^1;  
+				if(RB2==1)
+					{
+						tcp();
+						trans_string("AT+CIPSEND=47\r\n");
+						delay_esp();
+						trans_string("GET /update?api_key=LELNCG8TYXY51171&field1=0");
+						trans_string("\r\n");
+					}
+					else
+					{
+						tcp();
+						trans_string("AT+CIPSEND=47\r\n");
+						delay_esp();
+						trans_string("GET /update?api_key=LELNCG8TYXY51171&field1=1");
+						trans_string("\r\n");
+					}
+	  	}  
+	  }         
+}
+
+void delay()
+{
+		__delay_ms(10);
+}
+
+
+void uart_initialize()
+{
+     TRISC6=0;
+     TRISC7=1;
+     TXSTA=0X24;
+     RCSTA=0X90;
+     SPBRG=129;
+}
+
+void transmit(unsigned char a)
+{
+      TXREG=a;
+   while(TXIF==0);
+        TXIF=0;
+       
+}
+
+void esp8266()
+{ 
+	trans_string("AT\r\n");
+	delay_esp();
+	delay_esp();
+	delay_esp();
+
+	trans_string("AT+CWMODE=3\r\n");
+	delay_esp();
+
+	trans_string("AT+CIPMUX=0\r\n");
+	delay_esp();	
+}
+	
+void tcp()
+{
+	trans_string("AT+CIPSTART=");
+	transmit('"');	
+	trans_string("TCP");
+	transmit('"');
+	transmit(',');
+	transmit('"');
+	trans_string("api.thingspeak.com");
+	transmit('"');
+	transmit(',');
+	trans_string("80\r\n");
+	delay_esp();
+	__delay_ms(10);
+}
+	
+void delay_esp()
+{
+	for(int i=0;i<200;i++)
+	{
+		__delay_ms(10);
+	}
+}
+
+void transmit_int(int a)
+{
+
+		TXREG=a;
+    	while(TXIF==0);
+		TXIF=0;
+	
+}	
+     
+unsigned char trans_string(const char *s)
+{
+	while(*s)
+	transmit(*s++);
+}		
+
+            
+      
